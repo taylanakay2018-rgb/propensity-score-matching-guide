@@ -1,0 +1,95 @@
+# Every script in the book runs on every commit, and every chapter is audited.
+#
+# A book whose subtitle promises Python scripts cannot ship a repository that
+# has quietly stopped working. If a dependency upgrade breaks an example, or a
+# change to the code moves a number the book prints, this fails here rather
+# than in a reader's terminal.
+#
+# About 80 minutes. Every script runs in full rather than with --quick:
+# --quick skips the figures that need every draw (Script 2.7 skips Figure 2.2,
+# Script 5.3 skips Figure 5.1), figures are git-ignored so a fresh checkout has
+# none, and the Chapter 3 to 10 audits read the multi-draw scripts' saved results.
+name: run every script
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "0 15 1 * *"   # monthly, to catch upstream breakage
+
+jobs:
+  scripts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install
+        run: pip install -r requirements.txt
+
+      - name: Generate the data
+        run: python make_data.py --outdir plida_sim/plida_sim_a --quiet
+
+      - name: Validate the data
+        run: python validate_data.py --datadir plida_sim/plida_sim_a --strict
+
+      - name: Chapter scripts, in order
+        run: |
+          set -e
+          for s in ch02/02_0*.py ch01/01_0*.py ch03/03_0*.py ch04/04_0*.py ch05/05_0*.py ch06/06_0*.py ch07/07_0*.py ch08/08_0*.py ch09/09_0*.py ch10/10_0*.py; do
+            echo "::group::$s"
+            python "$s"
+            echo "::endgroup::"
+          done
+
+      - name: Confirm the figures were produced
+        run: |
+          set -e
+          for f in figure_1_1_overview figure_2_1_the_raw_data figure_2_2_missing_data \
+                   figure_3_1_prediction_against_bias figure_3_2_overlap \
+                   figure_4_1_trimming_tradeoff \
+                   figure_5_1_variation figure_5_2_balance \
+                   figure_6_1_capping figure_6_2_att_estimators \
+                   figure_9_1_standard_errors figure_10_1_sensitivity; do
+            test -f "figures/$f.tif"
+          done
+
+      - name: Estimator stability across draws
+        run: python stability.py
+
+      - name: Forward dependencies for the chapters not yet written
+        run: python forward_dependencies.py --datadir plida_sim/plida_sim_a --strict
+
+      - name: Full project audit, every chapter
+        run: |
+          set -e
+          for c in 1 2 3 4 5 6 7 8 9 10; do
+            echo "::group::chapter $c"
+            python audit.py --repo . --manuscript manuscript/ch$(printf %02d "$c")_content.js --strict
+            echo "::endgroup::"
+          done
+
+  # The conda route in the README, checked separately so a pin that conda-forge
+  # cannot satisfy fails here rather than for a reader. Generating and
+  # validating the data exercises every required package.
+  conda:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniforge-version: latest
+          environment-file: environment.yml
+          activate-environment: psm-book
+      - name: Generate and validate the data in the conda environment
+        run: |
+          python make_data.py --outdir plida_sim/plida_sim_a --quiet
+          python validate_data.py --datadir plida_sim/plida_sim_a --strict
+          python ch02/02_01_load_modules.py

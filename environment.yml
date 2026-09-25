@@ -1,0 +1,33 @@
+# PLIDA-SIM — conda environment, the same pins as requirements.txt.
+#
+#     conda env create -f environment.yml
+#     conda activate psm-book
+#
+# The core packages come from conda-forge. The two optional packages are
+# installed with pip inside the environment: causalml's conda-forge builds lag
+# its releases, and fancyimpute is not on conda-forge. Delete the pip section
+# if either fails to install; every exercise that uses them has a
+# scikit-learn fallback. audit.py checks that every pin here matches
+# requirements.txt.
+name: psm-book
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  # --- required to generate and validate the dataset ---
+  - numpy=2.2.6
+  - pandas=2.3.3
+  - scikit-learn=1.7.2
+  - scipy=1.15.3
+  # --- required for the book's exercises ---
+  - matplotlib=3.10.9
+  - seaborn=0.13.2
+  - statsmodels=0.14.6
+  # --- optional: Parquet output ---
+  - pyarrow=21.0.0
+  - pip
+  - pip:
+      # --- optional: Chapters 3, 5 and 8 (heavy; see requirements.txt) ---
+      - causalml==0.15.5
+      # --- optional: Chapter 2, SoftImpute only ---
+      - fancyimpute==0.7.0

@@ -1,0 +1,8 @@
+plida_sim/*/
+figures/*.png
+figures/*.tif
+figures/*.csv
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/

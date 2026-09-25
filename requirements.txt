@@ -1,0 +1,31 @@
+# PLIDA-SIM — pinned environment
+# Verified working together on Python 3.10, 8 August 2026, and on Python 3.11
+# (the version CI uses), 23 September 2026. environment.yml carries the same
+# pins for conda users; audit.py checks the two agree.
+
+# --- required to generate and validate the dataset ---
+numpy==2.2.6
+pandas==2.3.3
+scikit-learn==1.7.2
+scipy==1.15.3
+
+# --- required for the book's exercises ---
+matplotlib==3.10.9
+seaborn==0.13.2
+statsmodels==0.14.6
+
+# --- optional: Parquet output (--format parquet|both) ---
+pyarrow==21.0.0
+
+# --- optional: used in Chapters 3, 5 and 8 ---
+# Heavy install: pulls xgboost, lightgbm and compiled Cython extensions, and
+# may fail behind a locked-down corporate or government proxy. Every exercise
+# that uses it has a scikit-learn fallback path. Note that
+# causalml.propensity.calibrate does NOT exist in 0.15.5 despite appearing in
+# older tutorials.
+causalml==0.15.5
+
+# --- optional: Chapter 2, matrix-completion imputation only ---
+# scikit-learn's IterativeImputer covers most of what this package re-exports.
+# Install it only for SoftImpute.
+fancyimpute==0.7.0
